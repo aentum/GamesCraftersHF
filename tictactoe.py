@@ -1,5 +1,6 @@
 
 class Game():
+    hasSymmetry = False
     def __init__(self) -> None:
         self.startingPos = 0
 
