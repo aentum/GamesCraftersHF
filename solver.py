@@ -68,7 +68,6 @@ def add_analysis(value):
     val, remoteness = value[0], value[1]
     if remoteness == 0:
         primitive_states[val] += 1
-        all_positions[val] += 1
     all_positions[val] += 1
     if remoteness in by_remoteness:
         by_remoteness[remoteness][val] += 1
@@ -83,10 +82,10 @@ def add_analysis(value):
 
 solver(game.startingPos)
 # print(f'Primitive States: {primitive_states}')
-print(f'All Position Values: {all_positions}')
 print(f'Remoteness Analysis:')
 print('Remoteness, WIN, LOSE, TIE, TOTAL')
 for k in sorted([key for key, _ in by_remoteness.items()], reverse=True):
     w, l, t = by_remoteness[k]['WIN'], by_remoteness[k]['LOSE'], by_remoteness[k]['TIE']
     total = w + l + t
     print(f'{k},  {w},  {l},  {t},  {total}')
+print(f'All Position Values: {all_positions}, with total: {sum(all_positions.values())}')

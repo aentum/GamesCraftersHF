@@ -3,7 +3,9 @@ class Game():
     '''
     ALL_MOVES (Int array): ARRAY OF PENNIES THAT CAN BE TAKEN IN ONE MOVE
     '''
-    def __init__(self, all_moves) -> None:
+    hasSymmetry = False
+    def __init__(self, all_moves = [1, 2]) -> None:
+        self.startingPos = 10
         self.all_moves = sorted(all_moves)
     
     def isPrimitive(self, position):
