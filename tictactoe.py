@@ -32,9 +32,7 @@ class Game():
             if sum(board[i]) == -3:
                 return 'LOSE'
         # Transpose the 2D matrix
-        for i in range(3):
-            for j in range(i):
-                board[i][j], board[j][i] = board[j][i], board[i][j]
+        board = self.transpose(board)
         
         for i in range(3):
             if sum(board[i]) == -3:
@@ -70,25 +68,52 @@ class Game():
             position = position // 3
         while len(board) < 9:
             board.append(0)
-        board = [board[0:3], board[3:6], board[6:9]]
+        board = [board[0:3], board[3:6], board[6:9]] # Return the board as a 2D array
         return board
     
     # Encode the board in base 3, but inverting for the next player
     # i.e. My move (1 on board) is not my move (2 base 3) for the next player 
-    def encodeBoard(self, board):
+    def encodeBoard(self, board, invert=True):
         board = board[0] + board[1] + board[2]
         if (len(board) != 9):
             return TypeError('Wrong size board')
         position = 0
         for i in range(len(board)-1,-1,-1):
-            if board[i] == 1:
-                position += 2
-            elif board[i] == -1:
-                position += 1
+            if invert:
+                if board[i] == 1:
+                    position += 2
+                elif board[i] == -1:
+                    position += 1
+            else:
+                if board[i] == 1:
+                    position += 1
+                elif board[i] == -1:
+                    position += 2
             position *= 3
         return position // 3
+    
+    # return the canonical 
+    def Canonical(self, position):
+        board = self.decodePosition(position)
+        result = self.encodeBoard(board, False)
+        for i in range(2):
+            board = self.transpose(board)
+            for j in range(4):
+                board = self.rotate(board)
+                result = min(result, self.encodeBoard(board, False))
+        return result
+        
 
-
+    def transpose(self, board):
+        for i in range(3):
+            for j in range(i):
+                board[i][j], board[j][i] = board[j][i], board[i][j]
+        return board
+    
+    def rotate(self, board):
+        board = [board[2], board[1], board[0]]
+        board = self.transpose(board)
+        return board
 
 
 

@@ -20,9 +20,9 @@ value_dict = {}
 ## game_graph = {}
 
 def solver(position):
-    if game.hasSymmetry and game.Cannonical(position) in value_dict.keys():
-        return value_dict[game.Cannonical(position)]
-    elif position in value_dict.keys():
+    if game.hasSymmetry:
+        position = game.Canonical(position)
+    if position in value_dict.keys():
         return value_dict[position]
     else:
         assign_value(position)
@@ -36,13 +36,18 @@ def assign_value(position):
         value_dict[position] = value
         add_analysis(value)
     else:
+        children = set()
         child_values = {'WIN': [], 'LOSE': [], 'TIE': []}
         for move in game.GenerateMoves(position):
             child = game.DoMove(position, move)
-            if child not in value_dict:
-                assign_value(child)
-            c_value = value_dict[child]
-            child_values[c_value[0]].append(c_value[1])
+            if game.hasSymmetry:
+                child = game.Canonical(child)
+            if child not in children:
+                children.add(child)
+                if child not in value_dict:
+                    assign_value(child)
+                c_value = value_dict[child]
+                child_values[c_value[0]].append(c_value[1])
         if 0 < len(child_values['LOSE']):
             # If there exists a losing child, we're in a winning position, and we are done
             # remoteness = minimum (remoteness of losing children) + 1
@@ -74,7 +79,6 @@ def add_analysis(value):
     else:
         by_remoteness[remoteness] = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
         by_remoteness[remoteness][val] += 1
-
 
 # How do I generalize this to any game? 
 #for i in range(N, -1, -1):
