@@ -1,8 +1,22 @@
 
 class Game():
     hasSymmetry = False
+    # MxN board with K-in a row to win
+    m, n, k= 3, 3, 3
     def __init__(self) -> None:
         self.startingPos = 0
+        validgame = False
+        standard = input('Play Standard (3x3 by 3)? (Y/N)').capitalize()
+        while (standard == 'N' and not validgame):
+            m, n , k= map(int, input(("Enter (M N K) for board size and winning condition, "
+                                      "each separated by a space:")).split())
+            if (k <= max(m, n)):
+                self.m, self.n = m, n
+                self.k = k
+                validgame = True
+            else:
+                print('Invalid game, try again.')
+        print('Game configuration complete! \n')
 
     # Return result of MOVE from POSITION
     # Assumes that POSITION is not a primitive position
