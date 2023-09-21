@@ -1,7 +1,7 @@
 import numpy as np
 
 class Game():
-    hasSymmetry = True
+    hasSymmetry = False
     # MxN board with K-in a row to win
     m, n, k= 3, 3, 3
     def __init__(self) -> None:
@@ -51,7 +51,7 @@ class Game():
                     return 'LOSE'
             
         # Transpose the 2D matrix
-        board = self.transpose(board)
+        board = np.transpose(board)
         #Check Columns
         for i in range(self.n):
             rowsum = 0
@@ -63,10 +63,8 @@ class Game():
                 if(rowsum == -self.k):
                     return 'LOSE'
                     
-        board = self.transpose(board)
+        board = np.transpose(board)
         #Check Diagonal
-        #if board[0][0] + board[1][1] + board[2][2] == -3:
-            #return 'LOSE'
         for i in range(self.m - self.k + 1):
             for j in range(self.n - self.k + 1):
                 diagsum = sum(board[i+r][j+r] for r in range(self.k))
@@ -74,12 +72,9 @@ class Game():
                     return 'LOSE'
         for i in range(self.m - self.k + 1):
             for j in range(self.k - 1, self.n):
-                #print(f'i = {i}, j = {j}, k = {self.k}')
                 diagsum = sum(board[i+r][j-r] for r in range(self.k))
                 if (diagsum == -self.k):
                     return 'LOSE'
-        #if board[0][2] + board[1][1] + board[2][0] == -3:
-            #return 'LOSE'
         # If there is no winner and there is space left on board,
         # This board is not primitive
         for i in range(self.m):
@@ -105,15 +100,13 @@ class Game():
             position = position // 3
         while len(board) < (self.m * self.n):
             board.append(0)
-        #board = [board[0:3], board[3:6], board[6:9]] # Return the board as a 2D array
-        #board = [board[self.n * i : self.n * i + self.n] for i in range(self.m)]
         board = np.array(board).reshape((self.m, self.n))
-        return board.tolist()
+        return board
     
     # Encode the board in base 3, but inverting for the next player
     # i.e. My move (1 on board) is not my move (2 base 3) for the next player 
     def encodeBoard(self, board, invert=True):
-        board = np.array(board).flatten()
+        board = board.flatten()
         position = 0
         for i in range(len(board)-1,-1,-1):
             if invert:
@@ -134,32 +127,17 @@ class Game():
         board = self.decodePosition(position)
         result = self.encodeBoard(board, False)
         if (self.m == self.n):
-            for i in range(2):
-                board = self.transpose(board)
-                for j in range(4):
-                    board = self.rotate(board)
+            for _ in range(2):
+                board = np.transpose(board)
+                for _ in range(4):
+                    board = np.rot90(board, 1)
                     result = min(result, self.encodeBoard(board, False))
         else:
-            for i in range(2):
+            for _ in range(2):
                 board = np.array(board)
                 board = np.flip(board, 0)
-                for j in range(2):
+                for _ in range(2):
                     board = np.flip(board, 1)
                     result = min(result, self.encodeBoard(board, False))
         return result
         
-
-    def transpose(self, board):
-        board = np.array(board)
-        board = np.transpose(board)
-        # for i in range(3):
-        #     for j in range(i):
-        #         board[i][j], board[j][i] = board[j][i], board[i][j]
-        return board.tolist()
-    
-    def rotate(self, board):
-        # board = [board[2], board[1], board[0]]
-        # board = self.transpose(board)
-        board = np.array(board)
-        board = np.rot90(board, 1)
-        return board.tolist()
