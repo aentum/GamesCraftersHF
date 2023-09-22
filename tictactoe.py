@@ -1,9 +1,11 @@
 import numpy as np
 
 class Game():
-    hasSymmetry = False
+    hasSymmetry = True
     isMisere = False
     isOnlyX = False
+    isOrderandChaos = False
+    oppMove = -1
     endGameValue = 'LOSE'
     # MxN board with K-in a row to win
     m, n, k= 3, 3, 3
@@ -22,6 +24,8 @@ class Game():
         onlyX = input('Play onlyX? (Y/N)').capitalize()
         if (onlyX == 'Y'):
             self.isOnlyX = True
+            self.oppMove = 1
+            self.k == - self.k
         print('Game configuration complete! \n')
         print(f'Symmetries: {self.hasSymmetry}')
 
@@ -50,25 +54,18 @@ class Game():
                 if board[i][j] == 0:
                     moves.append((i, j))
         return moves
-        
-    def MiserePrimitveValue(self,position):
-        default = self.PrimitiveValue(position)
-        if(default == 'LOSE'):
-            default = 'WIN'
-        return default
-    
+           
     def PrimitiveValue(self, position):
-
         board = self.decodePosition(position)
         #Check Rows
         for i in range(self.m):
             rowsum = 0
             for j in range(self.n):
-                if(board[i][j] == -1):
-                    rowsum -= 1
+                if(board[i][j] == self.oppMove):
+                    rowsum += 1
                 else:
                     rowsum = 0
-                if(rowsum == -self.k):
+                if(rowsum == self.k):
                     return self.endGameValue
             
         # Transpose the 2D matrix
@@ -77,11 +74,11 @@ class Game():
         for i in range(self.n):
             rowsum = 0
             for j in range(self.m):
-                if(board[i][j] == -1):
-                    rowsum -= 1
+                if(board[i][j] == self.oppMove):
+                    rowsum += 1
                 else:
                     rowsum = 0
-                if(rowsum == -self.k):
+                if(rowsum == self.k):
                     return self.endGameValue
                     
         board = np.transpose(board)
@@ -89,12 +86,12 @@ class Game():
         for i in range(self.m - self.k + 1):
             for j in range(self.n - self.k + 1):
                 diagsum = sum(board[i+r][j+r] for r in range(self.k))
-                if (diagsum == -self.k):
+                if (abs(diagsum) == self.k):
                     return self.endGameValue
         for i in range(self.m - self.k + 1):
             for j in range(self.k - 1, self.n):
                 diagsum = sum(board[i+r][j-r] for r in range(self.k))
-                if (diagsum == -self.k):
+                if (abs(diagsum) == self.k):
                     return self.endGameValue
         # If there is no winner and there is space left on board,
         # This board is not primitive
