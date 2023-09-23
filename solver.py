@@ -1,11 +1,14 @@
 import importlib
+import json
 
 print(f'Input the game module to solve:')
 module_name = input()
 game_module = importlib.import_module(module_name)
 game = game_module.Game()
 starting_pos = game.startingPos
-print(f"Solving game: {module_name}")
+saveRes = input('Export data when finished? (Y/N): ').capitalize()
+saveRes = True if saveRes == 'Y' else False
+print(f"Solving game...")
 
 primitive_states = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
 all_positions = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
@@ -94,3 +97,13 @@ for k in sorted([key for key, _ in by_remoteness.items()], reverse=True):
     total = w + l + t
     print(f'{k},  {w},  {l},  {t},  {total}')
 print(f'All Position Values: {all_positions}, with total: {sum(all_positions.values())}')
+
+if saveRes:
+    configs = {'Configs':{}}
+    for attr_name in dir(game):
+        if not callable(getattr(game, attr_name)) and not attr_name.startswith("__"):
+            attr_value = getattr(game, attr_name)
+            configs['Configs'].update({attr_name:attr_value})
+    value_dict.update(configs)
+    with open(f'./results/{module_name}_solved.json', 'w') as json_file:
+        json.dump(value_dict, json_file)

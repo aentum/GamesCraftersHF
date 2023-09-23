@@ -4,7 +4,6 @@ class Game():
     hasSymmetry = True
     isMisere = False
     isOnlyX = False
-    oppMove = -1
     endGameValue = 'LOSE'
     isOrderAndChaos = False
     isOrderFirst = True
@@ -26,8 +25,8 @@ class Game():
         onlyX = input('Play onlyX? (Y/N)').capitalize()
         if (onlyX == 'Y'):
             self.isOnlyX = True
-            self.oppMove = 1
-        orderAndChaos = input('If playing order and chaos, who goes first? (O/C)' )
+        orderAndChaos = input("If playing order and chaos, who goes first? (O/C) \n"
+                              "Otherwise press ENTER." )
         if (orderAndChaos):
             self.isOrderAndChaos = True
             self.isOrderFirst = (orderAndChaos == 'O')
