@@ -4,9 +4,11 @@ class Game():
     hasSymmetry = True
     isMisere = False
     isOnlyX = False
-    isOrderandChaos = False
     oppMove = -1
     endGameValue = 'LOSE'
+    isOrderAndChaos = False
+    isOrderFirst = True
+    isOrder = True
     # MxN board with K-in a row to win
     m, n, k= 3, 3, 3
     def __init__(self) -> None:
@@ -25,9 +27,13 @@ class Game():
         if (onlyX == 'Y'):
             self.isOnlyX = True
             self.oppMove = 1
-            self.k == - self.k
-        print('Game configuration complete! \n')
-        print(f'Symmetries: {self.hasSymmetry}')
+        orderAndChaos = input('If playing order and chaos, who goes first? (O/C)' )
+        if (orderAndChaos):
+            self.isOrderAndChaos = True
+            self.isOrderFirst = (orderAndChaos == 'O')
+
+        print('[TicTacToe] Game configuration complete! \n')
+        print(f'Symmetries enabled: {self.hasSymmetry}')
 
     # Return result of MOVE from POSITION
     # Assumes that POSITION is not a primitive position
@@ -35,10 +41,10 @@ class Game():
     def DoMove(self, position, move):
         board = self.decodePosition(position)
         x, y= move[0], move[1]
-        board[x][y] = 1
+        board[x][y] = move[2]
         # Encode the board for the next player
         # position = self.encodeboard(board, invert = not self.isOnlyX)
-        if (self.isOnlyX):
+        if (self.isOnlyX or self.isOrderAndChaos):
             position = self.encodeBoard(board, invert=False)
         else:
             position = self.encodeBoard(board)
@@ -52,20 +58,25 @@ class Game():
         for i in range(self.m):
             for j in range(self.n):
                 if board[i][j] == 0:
-                    moves.append((i, j))
+                    moves.append((i, j, 1))
+                    if self.isOrderAndChaos:
+                        moves.append((i, j, -1))
         return moves
            
     def PrimitiveValue(self, position):
         board = self.decodePosition(position)
+
+        if(self.isOrderAndChaos):
+            self.setTurn(board)
+            if(self.isOrder):
+                self.endGameValue = 'WIN'
+            else:
+                self.endGameValue = 'LOSE'
+
         #Check Rows
         for i in range(self.m):
-            rowsum = 0
-            for j in range(self.n):
-                if(board[i][j] == self.oppMove):
-                    rowsum += 1
-                else:
-                    rowsum = 0
-                if(rowsum == self.k):
+            for j in range(self.n - self.k + 1):
+                if (abs(sum(board[i][j:j+self.k])) == self.k):
                     return self.endGameValue
             
         # Transpose the 2D matrix
@@ -73,15 +84,11 @@ class Game():
         #Check Columns
         for i in range(self.n):
             rowsum = 0
-            for j in range(self.m):
-                if(board[i][j] == self.oppMove):
-                    rowsum += 1
-                else:
-                    rowsum = 0
-                if(rowsum == self.k):
+            for j in range(self.m - self.k + 1):
+                if (abs(sum(board[i][j:j+self.k])) == self.k):
                     return self.endGameValue
-                    
         board = np.transpose(board)
+
         #Check Diagonal
         for i in range(self.m - self.k + 1):
             for j in range(self.n - self.k + 1):
@@ -98,7 +105,13 @@ class Game():
         for i in range(self.m):
             for j in range(self.n):
                 if board[i][j] == 0:
-                    return 'NOT_PRIMITIVE'
+                    return 'NOT_PRIMITIVE'           
+
+        if(self.isOrderAndChaos):
+            if(self.isOrder):
+                return 'LOSE'
+            else:
+                return 'WIN'
         return 'TIE'
     
     # Positions are decoded in base 3
@@ -150,6 +163,8 @@ class Game():
                 for _ in range(4):
                     board = np.rot90(board, 1)
                     result = min(result, self.encodeBoard(board, False))
+                    if self.isOrderAndChaos:
+                        result = min(result, self.encodeBoard(board))
         else:
             for _ in range(2):
                 board = np.array(board)
@@ -157,5 +172,16 @@ class Game():
                 for _ in range(2):
                     board = np.flip(board, 1)
                     result = min(result, self.encodeBoard(board, False))
+                    if self.isOrderAndChaos:
+                        result = min(result, self.encodeBoard(board))
         return result
-        
+    
+    # Count nonzero entries on the board,
+    # If even, then it's first player's turn
+    # If odd, then it's second player's turn
+    def setTurn(self, board):
+        num_entries = np.count_nonzero(board)
+        if (num_entries % 2 == 0):
+            self.isOrder = self.isOrderFirst
+        else:
+            self.isOrder = not self.isOrderFirst
