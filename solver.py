@@ -1,26 +1,8 @@
-import importlib
 import json
 
-print(f'Input the game module to solve:')
-module_name = input()
-game_module = importlib.import_module(module_name)
-game = game_module.Game()
-starting_pos = game.startingPos
-saveRes = input('Export data when finished? (Y/N): ').capitalize()
-saveRes = True if saveRes == 'Y' else False
-print(f"Solving game...")
-
-primitive_states = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
-all_positions = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
-by_remoteness = {}
-
-# key: position, value: a tuple,  (one of 'WIN', 'TIE', or 'LOSE' | remoteness)
-value_dict = {}
-
-# We don't need to keep game graph, as we will dynamically find our next moves
-# using game.GenerateMoves() function
-## key: position, value: list of positions that is reachable from current position
-## game_graph = {}
+global game, value_dict
+# Used for game analysis
+global primitive_states, all_positions, by_remoteness
 
 def solver(position):
     if game.hasSymmetry:
@@ -32,7 +14,6 @@ def solver(position):
         #return value_dict[position] -> Don't use this if I want to solve the game fully in one shot
 
 def assign_value(position):
-    global primitive_states, all_positions
     if game.PrimitiveValue(position) != 'NOT_PRIMITIVE': 
         # This position is primitive, so update value_dict and we are done
         value = (game.PrimitiveValue(position), 0)
@@ -74,8 +55,8 @@ def assign_value(position):
 
 def add_analysis(value):
     val, remoteness = value[0], value[1]
-    if remoteness == 0:
-        primitive_states[val] += 1
+    # if remoteness == 0:
+        # primitive_states[val] += 1
     all_positions[val] += 1
     if remoteness in by_remoteness:
         by_remoteness[remoteness][val] += 1
@@ -87,23 +68,39 @@ def add_analysis(value):
 #for i in range(N, -1, -1):
     #print(f"{i}: {solver(i)}")
 
-solver(game.startingPos)
-# print(f'Primitive States: {primitive_states}')
-print(f'Remoteness Analysis:')
-print(f'Initial position is {value_dict[0][0]} in {value_dict[0][1]}.')
-print('Remoteness, WIN, LOSE, TIE, TOTAL')
-for k in sorted([key for key, _ in by_remoteness.items()], reverse=True):
-    w, l, t = by_remoteness[k]['WIN'], by_remoteness[k]['LOSE'], by_remoteness[k]['TIE']
-    total = w + l + t
-    print(f'{k},  {w},  {l},  {t},  {total}')
-print(f'All Position Values: {all_positions}, with total: {sum(all_positions.values())}')
+def main(game, module_name):
+    starting_pos = game.startingPos
+    saveRes = input('Export data when finished? (Y/N): ').capitalize()
+    saveRes = True if saveRes == 'Y' else False
+    print(f"Solving game...")
 
-if saveRes:
-    configs = {'Configs':{}}
-    for attr_name in dir(game):
-        if not callable(getattr(game, attr_name)) and not attr_name.startswith("__"):
-            attr_value = getattr(game, attr_name)
-            configs['Configs'].update({attr_name:attr_value})
-    value_dict.update(configs)
-    with open(f'./results/{module_name}_solved.json', 'w') as json_file:
-        json.dump(value_dict, json_file)
+    # primitive_states = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
+    all_positions = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
+    by_remoteness = {}
+
+    # key: position, value: a tuple,  (one of 'WIN', 'TIE', or 'LOSE' | remoteness)
+    value_dict = {}
+
+    solver(game.startingPos)
+    # print(f'Primitive States: {primitive_states}')
+    print(f'Remoteness Analysis:')
+    print(f'Initial position is {value_dict[0][0]} in {value_dict[0][1]}.')
+    print('Remoteness, WIN, LOSE, TIE, TOTAL')
+    for k in sorted([key for key, _ in by_remoteness.items()], reverse=True):
+        w, l, t = by_remoteness[k]['WIN'], by_remoteness[k]['LOSE'], by_remoteness[k]['TIE']
+        total = w + l + t
+        print(f'{k},  {w},  {l},  {t},  {total}')
+    print(f'All Position Values: {all_positions}, with total: {sum(all_positions.values())}')
+
+    if saveRes:
+        configs = {'Configs':{}}
+        for attr_name in dir(game):
+            if not callable(getattr(game, attr_name)) and not attr_name.startswith("__"):
+                attr_value = getattr(game, attr_name)
+                configs['Configs'].update({attr_name:attr_value})
+        value_dict.update(configs)
+        with open(f'./results/{module_name}_solved.json', 'w') as json_file:
+            json.dump(value_dict, json_file)
+        return value_dict
+    else:
+        return value_dict

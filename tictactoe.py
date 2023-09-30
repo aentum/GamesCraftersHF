@@ -182,5 +182,8 @@ class Game():
         num_entries = np.count_nonzero(board)
         if (num_entries % 2 == 0):
             self.isOrder = self.isOrderFirst
+            return 1
         else:
             self.isOrder = not self.isOrderFirst
+            return -1
+
