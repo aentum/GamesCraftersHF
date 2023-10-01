@@ -1,8 +1,5 @@
 import json
 
-global game, value_dict
-# Used for game analysis
-global primitive_states, all_positions, by_remoteness
 
 def solver(position):
     if game.hasSymmetry:
@@ -68,12 +65,16 @@ def add_analysis(value):
 #for i in range(N, -1, -1):
     #print(f"{i}: {solver(i)}")
 
-def main(game, module_name):
+def main(game_obj, module_name):
+    global game, value_dict
+    game = game_obj
     starting_pos = game.startingPos
     saveRes = input('Export data when finished? (Y/N): ').capitalize()
     saveRes = True if saveRes == 'Y' else False
     print(f"Solving game...")
 
+    # Used for game analysis
+    global primitive_states, all_positions, by_remoteness
     # primitive_states = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
     all_positions = {'WIN': 0, 'LOSE': 0, 'TIE': 0}
     by_remoteness = {}
