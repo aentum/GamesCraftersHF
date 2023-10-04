@@ -2,7 +2,7 @@ import importlib
 import json
 
 def main():
-    global game, solved, positionHistory
+    global game, solved, positionHistory, value_dict
     print(f'Input the game module to play:')
     module_name = input()
     game_module = importlib.import_module(module_name)
@@ -37,6 +37,8 @@ def main():
 # Check if win/lose/tie
 def playGame(position, option):
     #TODO Play with COMP
+    # if(option == 2):
+    #     position = compDoMove(position)
     board = game.decodePosition(position)
     player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
     displayGame(board)
@@ -60,6 +62,8 @@ def playGame(position, option):
     if (playerMove in possibleMoves):
         positionHistory.append(position)
         position = game.DoMove(position, translateMove(playerMove))
+        if(option == 3):
+            position = compDoMove(position)
         playGame(position, option)
     else:
         print("Invalid Move")
@@ -88,8 +92,38 @@ def displayGame(board):
             board_str += '\n'
     print(board_str)
     if solved:
+        position = game.encodeBoard(board, True)
+        value, remoteness = value_dict[game.Canonical(position)]
+        print(f"{value} in {remoteness}")
         pass #TODO: Game analysis 
     
+def compDoMove(position):
+    potentialMoves = []
+    if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
+        print(f"Player has {game.PrimitiveValue(position)}")
+        return
+    parentValue, parentRemoteness = value_dict[game.Canonical(position)]
+    for move in game.GenerateMoves(position):
+        child = game.DoMove(position, move)
+        value, remoteness = value_dict[game.Canonical(child)]
+        if(parentValue == "WIN"):
+            if(value == "LOSE"):
+                potentialMoves.append((move, value, remoteness))
+        elif(parentValue == "TIE"):
+            if(value == "TIE"):
+                potentialMoves.append((move, value, remoteness))
+        else:
+            potentialMoves.append((move, value, remoteness))
+    if(parentValue == "WIN"):   
+        bestMove = min(potentialMoves, key=ret_3rd_ele)[0]
+    else:
+        bestMove = max(potentialMoves, key=ret_3rd_ele)[0]
+    position = game.DoMove(position, bestMove)
+    return position
+    
+def ret_3rd_ele(tuple_1):
+    return tuple_1[2]
+
 def generatePlayerMoves(position):
     board = game.decodePosition(position).flatten()
     moves = []
