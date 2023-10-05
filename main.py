@@ -37,8 +37,8 @@ def main():
 # Check if win/lose/tie
 def playGame(position, option):
     #TODO Play with COMP
-    # if(option == 2):
-    #     position = compDoMove(position)
+    if(option == 3):
+        position = compDoMove(position)
     board = game.decodePosition(position)
     player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
     displayGame(board)
@@ -62,7 +62,7 @@ def playGame(position, option):
     if (playerMove in possibleMoves):
         positionHistory.append(position)
         position = game.DoMove(position, translateMove(playerMove))
-        if(option == 3):
+        if(option == 2):
             position = compDoMove(position)
         playGame(position, option)
     else:
