@@ -28,17 +28,19 @@ def main():
         option = 1
 
     positionHistory = []
-    playGame(game.startingPos, option)
+    playGame(game.startingPos, option, False)
 
 # On every turn:
 # Display the board
 # Take in input
 # Do the move / Undo a move
 # Check if win/lose/tie
-def playGame(position, option):
+def playGame(position, option,undo):
     #TODO Play with COMP
-    if(option == 2):
+    if(option == 2 and not undo):
         position = compDoMove(position)
+        if not position: #Game is over on computer's turn
+            return
     board = game.decodePosition(position)
     player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
@@ -51,17 +53,17 @@ def playGame(position, option):
     if (playerMove == "u"):
         if (len(positionHistory) == 0): 
             print("Can't Undo!!")
-            playGame(position, option)
+            playGame(position, option, True)
             return
         oldPosition = len(positionHistory) - 1
         position = positionHistory[oldPosition]
         positionHistory.remove(position)
-        playGame(position, option)
+        playGame(position, option, True)
     else:
         playerMove = int(playerMove)
         if (playerMove not in possibleMoves):
             print("Invalid Move")
-            playGame(position, option)
+            playGame(position, option, False)
         else:
             positionHistory.append(position)
             position = game.DoMove(position, translateMove(playerMove))
@@ -69,7 +71,7 @@ def playGame(position, option):
                 position = compDoMove(position)
                 if not position: #Game is over on computer's turn
                     return
-            playGame(position, option)
+            playGame(position, option, False)
 
 def displayGame(board, gameOver=False):
     print("Legend: ", end = '\n')
@@ -96,16 +98,9 @@ def displayGame(board, gameOver=False):
     if gameOver:
         print('GAME OVER!')
     elif solved:
-        position = game.encodeBoard(board, invert=False)
+        position = game.encodeBoard(board, invert=True)
         value, remoteness = value_dict[game.Canonical(position)]
         player = game.setTurn(board)
-        # The game values are stored from the first player's perspective,
-        # so we reverse it for the second player
-        if player == -1: 
-            if value == 'WIN':
-                value = 'LOSE'
-            elif value == 'LOSE':
-                value = 'WIN'
         print(f"Player {1 if player == 1 else 2} can {value} in {remoteness}")
     
 # Generate the best move from POSITION
