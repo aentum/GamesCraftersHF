@@ -20,8 +20,8 @@ def main():
     if solved:
         print('''How do you want to play the game?
                 (1) Two-player game
-                (2) VS Computer, going first
-                (3) VS Computer, going second''')
+                (2) VS Computer, computer going first
+                (3) VS Computer, computer going second''')
         option = int(input())
     else:
         print('There is no solved game. Defaulting to a two-player game.')
@@ -37,14 +37,15 @@ def main():
 # Check if win/lose/tie
 def playGame(position, option):
     #TODO Play with COMP
-    # if(option == 2):
-    #     position = compDoMove(position)
+    if(option == 2):
+        position = compDoMove(position)
     board = game.decodePosition(position)
     player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
-    displayGame(board)
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
+        displayGame(board, gameOver=True)
         print(f"Player {1 if player == 1 else 2} {game.PrimitiveValue(position)}")
         return
+    displayGame(board)
     possibleMoves = generatePlayerMoves(position)
     playerMove = (input("Player's move [(u)ndo/1-9]: ")) # TODO: For order and chaos, provide the option to place x or o
     if (playerMove == "u"):
@@ -56,20 +57,21 @@ def playGame(position, option):
         position = positionHistory[oldPosition]
         positionHistory.remove(position)
         playGame(position, option)
-        return 
     else:
         playerMove = int(playerMove)
-    if (playerMove in possibleMoves):
-        positionHistory.append(position)
-        position = game.DoMove(position, translateMove(playerMove))
-        if(option == 3):
-            position = compDoMove(position)
-        playGame(position, option)
-    else:
-        print("Invalid Move")
-        playGame(position, option)
+        if (playerMove not in possibleMoves):
+            print("Invalid Move")
+            playGame(position, option)
+        else:
+            positionHistory.append(position)
+            position = game.DoMove(position, translateMove(playerMove))
+            if(option == 3):
+                position = compDoMove(position)
+                if not position: #Game is over on computer's turn
+                    return
+            playGame(position, option)
 
-def displayGame(board):
+def displayGame(board, gameOver=False):
     print("Legend: ", end = '\n')
     print("(1 2 3)", end ='\n') # TODO: Generalize to MxN games
     print("(4 5 6)", end ='\n') # TODO: This function ideally should live in game module
@@ -80,7 +82,7 @@ def displayGame(board):
         position = game.encodeBoard(board, True)
         board = game.decodePosition(position)
     board = board.flatten()
-    board_str = ""
+    board_str = "Board: \n"
     for i in range(game.m * game.n):
         if board[i] == 1:
             board_str += 'X '
@@ -91,38 +93,44 @@ def displayGame(board):
         if (i + 1) % game.n == 0:
             board_str += '\n'
     print(board_str)
-    if solved:
-        position = game.encodeBoard(board, True)
+    if gameOver:
+        print('GAME OVER!')
+    elif solved:
+        position = game.encodeBoard(board, invert=False)
         value, remoteness = value_dict[game.Canonical(position)]
-        print(f"{value} in {remoteness}")
-        pass #TODO: Game analysis 
+        player = game.setTurn(board)
+        # The game values are stored from the first player's perspective,
+        # so we reverse it for the second player
+        if player == -1: 
+            if value == 'WIN':
+                value = 'LOSE'
+            elif value == 'LOSE':
+                value = 'WIN'
+        print(f"Player {1 if player == 1 else 2} can {value} in {remoteness}")
     
+# Generate the best move from POSITION
 def compDoMove(position):
-    potentialMoves = []
+    potentialMoves = {'WIN': [], 'LOSE': [], 'TIE': []}
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
-        print(f"Player has {game.PrimitiveValue(position)}")
+        displayGame(game.decodePosition(position), gameOver=True)
+        print(f"Computer {game.PrimitiveValue(position)}")
         return
-    parentValue, parentRemoteness = value_dict[game.Canonical(position)]
     for move in game.GenerateMoves(position):
         child = game.DoMove(position, move)
         value, remoteness = value_dict[game.Canonical(child)]
-        if(parentValue == "WIN"):
-            if(value == "LOSE"):
-                potentialMoves.append((move, value, remoteness))
-        elif(parentValue == "TIE"):
-            if(value == "TIE"):
-                potentialMoves.append((move, value, remoteness))
-        else:
-            potentialMoves.append((move, value, remoteness))
-    if(parentValue == "WIN"):   
-        bestMove = min(potentialMoves, key=ret_3rd_ele)[0]
+        potentialMoves[value].append((move, remoteness))
+    # Goal is to:
+    # Give losing position to child if it exists (minimize remoteness to win ASAP)
+    # elif give tieing position to child if it exists
+    # else it means all child are winning (maximum remoteness = fight back as hard as you can)
+    if (len(potentialMoves['LOSE']) > 0):   
+        bestMove = min(potentialMoves['LOSE'], key = lambda x : x[1])[0]
+    elif (len(potentialMoves['TIE']) > 0):
+        bestMove = min(potentialMoves['TIE'], key = lambda x : x[1])[0]
     else:
-        bestMove = max(potentialMoves, key=ret_3rd_ele)[0]
-    position = game.DoMove(position, bestMove)
+        bestMove = max(potentialMoves, key= lambda x : x[1])[0]
+    position = game.DoMove(position, bestMove) 
     return position
-    
-def ret_3rd_ele(tuple_1):
-    return tuple_1[2]
 
 def generatePlayerMoves(position):
     board = game.decodePosition(position).flatten()
