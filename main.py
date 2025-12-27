@@ -2,7 +2,7 @@ import importlib
 import json
 
 def main():
-    global game, solved, positionHistory, value_dict
+    global game, solved, positionHistory, value_dict, option
     print(f'Input the game module to play:')
     module_name = input()
     game_module = importlib.import_module(module_name)
@@ -26,35 +26,44 @@ def main():
     else:
         print('There is no solved game. Defaulting to a two-player game.')
         option = 1
+    match option:
+        case 1:
+	    player1, player2 = 'USER', 'USER'
+        case 2:
+            player1, player2 = 'COMP', 'USER'
+        case 3:
+            player1, player2 = 'USER', 'COMP'
 
-    positionHistory = []
-    playGame(game.startingPos, option, False)
+    positionHistory = [game.startingPos]
+    while True:
+        isover = playGame(positionHistory)
+        if isover:
+            break
 
 # On every turn:
 # Display the board
 # Take in input
 # Do the move / Undo a move
 # Check if win/lose/tie
-def playGame(position, option, undo):
-    #TODO Play with COMP
-    if(option == 2 and not undo):
-        position = compDoMove(position)
-        if not position: #Game is over on computer's turn
-            return
-    board = game.decodePosition(position)
+def playGame(positionHistory):
+    position = positionHistory[-1]
+#    if(option == 2):
+#        position = compDoMove(position)
+#        if not position: #Game is over on computer's turn
+#            return True
+    board = game.decodePosition(position) # TODO: Not game-agnostic
     player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
         displayGame(board, gameOver=True)
         print(f"Player {1 if player == 1 else 2} {game.PrimitiveValue(position)}")
-        return
+        return True
     displayGame(board)
     possibleMoves = generatePlayerMoves(position)
-    playerMove = (input("Player's move [(u)ndo/1-9]: ")) # TODO: For order and chaos, provide the option to place x or o
+    playerMove = (input("Player's move [(u)ndo/1-9]: ")) # TODO: For order and chaos, provide the option to place x or o # TODO: Not game-agnostic
     if (playerMove == "u"):
-        if (len(positionHistory) == 0): 
+        if (len(positionHistory) == 1): 
             print("Can't Undo!!")
-            playGame(position, option, True)
-            return
+            return False
         oldPosition = len(positionHistory) - 1
         position = positionHistory[oldPosition]
         positionHistory.remove(position)
