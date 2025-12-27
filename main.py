@@ -35,7 +35,7 @@ def main():
 # Take in input
 # Do the move / Undo a move
 # Check if win/lose/tie
-def playGame(position, option,undo):
+def playGame(position, option, undo):
     #TODO Play with COMP
     if(option == 2 and not undo):
         position = compDoMove(position)
@@ -81,7 +81,7 @@ def displayGame(board, gameOver=False):
 
     if game.setTurn(board) == -1 and not game.isOnlyX: 
         # If it is the second player, invert the board for display 
-        position = game.encodeBoard(board, True)
+        position = game.encodeBoard(board, invert=True)
         board = game.decodePosition(position)
     board = board.flatten()
     board_str = "Board: \n"
@@ -123,7 +123,7 @@ def compDoMove(position):
     elif (len(potentialMoves['TIE']) > 0):
         bestMove = min(potentialMoves['TIE'], key = lambda x : x[1])[0]
     else:
-        bestMove = max(potentialMoves, key= lambda x : x[1])[0]
+        bestMove = max(potentialMoves['WIN'], key = lambda x : x[1])[0]
     position = game.DoMove(position, bestMove) 
     return position
 
