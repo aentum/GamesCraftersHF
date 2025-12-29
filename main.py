@@ -2,7 +2,7 @@ import importlib
 import json
 
 def main():
-    global game, solved, positionHistory, value_dict
+    global game, solved, value_dict 
     print(f'Input the game module to play:')
     module_name = input()
     game_module = importlib.import_module(module_name)
@@ -14,7 +14,10 @@ def main():
         solver = importlib.import_module('solver')
         value_dict = solver.main(game, module_name)
         solved = True
+    play()
 
+def play():
+    global option, players
     # Play Human vs Human or Human vs Comp
     option = -1
     if solved:
@@ -26,57 +29,70 @@ def main():
     else:
         print('There is no solved game. Defaulting to a two-player game.')
         option = 1
+    match option:
+        case 1:
+            players = ['USER', 'USER']
+        case 2:
+            players = ['COMP', 'USER']
+        case 3:
+            players = ['USER', 'COMP']
 
-    positionHistory = []
-    playGame(game.startingPos, option, False)
+    positionHistory = [game.startingPos]
+    while True:
+        isover = gameTurn(positionHistory)
+        if isover:
+            break
+    if ('Y' == input('Game Over, Play again? (Y/N)').capitalize()):
+        play()
+    else:
+        print('Thanks for Playing, Bye!')
 
 # On every turn:
 # Display the board
 # Take in input
 # Do the move / Undo a move
 # Check if win/lose/tie
-def playGame(position, option, undo):
-    #TODO Play with COMP
-    if(option == 2 and not undo):
-        position = compDoMove(position)
-        if not position: #Game is over on computer's turn
-            return
-    board = game.decodePosition(position)
-    player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
+def gameTurn(positionHistory):
+    assert len(positionHistory) > 0
+    position = positionHistory[-1]
+    board = game.decodePosition(position) # TODO: Not game-agnostic
+    player = 1 if game.setTurn(board) == 1 else 2
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
         displayGame(board, gameOver=True)
-        print(f"Player {1 if player == 1 else 2} {game.PrimitiveValue(position)}")
-        return
+        print(f"Player {players[player-1]} {game.PrimitiveValue(position)}")
+        return True
+    
+    if players[player-1] == 'COMP':
+        position = compDoMove(position)
+        positionHistory.append(position)
+        return False
+
     displayGame(board)
-    possibleMoves = generatePlayerMoves(position)
-    playerMove = (input("Player's move [(u)ndo/1-9]: ")) # TODO: For order and chaos, provide the option to place x or o
+    possibleMoves = game.GenerateMoves(position)
+    playerMove = (input("Player's move [(u)ndo/1-9]: ")) # TODO: For order and chaos, provide the option to place x or o # TODO: Not game-agnostic
     if (playerMove == "u"):
-        if (len(positionHistory) == 0): 
+        if (len(positionHistory) == 1 or (len(positionHistory)==2 and players[0] == 'COMP')): 
             print("Can't Undo!!")
-            playGame(position, option, True)
-            return
-        oldPosition = len(positionHistory) - 1
-        position = positionHistory[oldPosition]
-        positionHistory.remove(position)
-        playGame(position, option, True)
+            return False
+        positionHistory.pop()
+        positionHistory.pop()
+        return False
     else:
-        playerMove = int(playerMove)
+        playerMove = translateMove(int(playerMove))
         if (playerMove not in possibleMoves):
             print("Invalid Move")
-            playGame(position, option, False)
+            return False
         else:
+            position = game.DoMove(position, playerMove)
             positionHistory.append(position)
-            position = game.DoMove(position, translateMove(playerMove))
-            if(option == 3):
-                position = compDoMove(position)
-                if not position: #Game is over on computer's turn
-                    return
-            playGame(position, option, False)
+            return False
 
+# TODO: Generalize to MxN games
+# TODO: Not game-agnostic, Move to game module
 def displayGame(board, gameOver=False):
     print("Legend: ", end = '\n')
-    print("(1 2 3)", end ='\n') # TODO: Generalize to MxN games
-    print("(4 5 6)", end ='\n') # TODO: This function ideally should live in game module
+    print("(1 2 3)", end ='\n') 
+    print("(4 5 6)", end ='\n') 
     print("(7 8 9)", end ='\n')
 
     if game.setTurn(board) == -1 and not game.isOnlyX: 
@@ -127,15 +143,8 @@ def compDoMove(position):
     position = game.DoMove(position, bestMove) 
     return position
 
-def generatePlayerMoves(position):
-    board = game.decodePosition(position).flatten()
-    moves = []
-    for i in range(len(board)):
-        if(board[i] == 0):
-            moves.append(i + 1)
-    return moves    
-
-def translateMove(n):
+# TODO: Not game-agnostic
+def translateMove(n): 
     i = (n-1) // game.m
     j = (n-1) % game.n
     return (i, j, 1) 
