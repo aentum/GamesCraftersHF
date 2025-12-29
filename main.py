@@ -31,7 +31,7 @@ def play():
         option = 1
     match option:
         case 1:
-            players = ['USER', 'USER']
+            players = ['USER 1', 'USER 2']
         case 2:
             players = ['COMP', 'USER']
         case 3:
@@ -59,7 +59,7 @@ def gameTurn(positionHistory):
     player = 1 if game.setTurn(board) == 1 else 2
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
         displayGame(board, gameOver=True)
-        print(f"Player {players[player-1]} {game.PrimitiveValue(position)}")
+        print(f"{players[player-1]} {game.PrimitiveValue(position)}")
         return True
     
     if players[player-1] == 'COMP':
@@ -95,9 +95,11 @@ def displayGame(board, gameOver=False):
     print("(4 5 6)", end ='\n') 
     print("(7 8 9)", end ='\n')
 
-    if game.setTurn(board) == -1 and not game.isOnlyX: 
-        # If it is the second player, invert the board for display 
-        position = game.encodeBoard(board, invert=True)
+    # If it is the second player, invert the board for display and value analysis
+    invert = game.setTurn(board) == -1 and not game.isOnlyX   
+
+    if invert: 
+        position = game.encodeBoard(board, invert=invert)
         board = game.decodePosition(position)
     board = board.flatten()
     board_str = "Board: \n"
@@ -114,10 +116,10 @@ def displayGame(board, gameOver=False):
     if gameOver:
         print('GAME OVER!')
     elif solved:
-        position = game.encodeBoard(board, invert=True)
+        position = game.encodeBoard(board, invert=invert) 
         value, remoteness = value_dict[game.Canonical(position)]
-        player = game.setTurn(board)
-        print(f"Player {1 if player == 1 else 2} can {value} in {remoteness}")
+        player = 1 if game.setTurn(board) == 1 else 2
+        print(f"{players[player-1]} can {value} in {remoteness}")
     
 # Generate the best move from POSITION
 def compDoMove(position):
