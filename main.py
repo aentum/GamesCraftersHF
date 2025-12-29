@@ -2,7 +2,7 @@ import importlib
 import json
 
 def main():
-    global game, solved, positionHistory, value_dict, option
+    global game, solved, positionHistory, value_dict, option, players
     print(f'Input the game module to play:')
     module_name = input()
     game_module = importlib.import_module(module_name)
@@ -28,17 +28,18 @@ def main():
         option = 1
     match option:
         case 1:
-	    player1, player2 = 'USER', 'USER'
+            players = ['USER', 'USER']
         case 2:
-            player1, player2 = 'COMP', 'USER'
+            players = ['COMP', 'USER']
         case 3:
-            player1, player2 = 'USER', 'COMP'
+            players = ['USER', 'COMP']
 
     positionHistory = [game.startingPos]
     while True:
         isover = playGame(positionHistory)
         if isover:
             break
+    print('Game Over, Thanks for Playing!')
 
 # On every turn:
 # Display the board
@@ -46,46 +47,46 @@ def main():
 # Do the move / Undo a move
 # Check if win/lose/tie
 def playGame(positionHistory):
+    assert len(positionHistory) > 0
     position = positionHistory[-1]
-#    if(option == 2):
-#        position = compDoMove(position)
-#        if not position: #Game is over on computer's turn
-#            return True
     board = game.decodePosition(position) # TODO: Not game-agnostic
     player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
         displayGame(board, gameOver=True)
-        print(f"Player {1 if player == 1 else 2} {game.PrimitiveValue(position)}")
+        print(f"Player {players[player-1]} {game.PrimitiveValue(position)}")
         return True
+    
+    if players[player-1] == 'COMP':
+        position = compDoMove(position)
+        positionHistory.append(position)
+        return False
+
     displayGame(board)
-    possibleMoves = generatePlayerMoves(position)
+    possibleMoves = game.GenerateMoves(position)
     playerMove = (input("Player's move [(u)ndo/1-9]: ")) # TODO: For order and chaos, provide the option to place x or o # TODO: Not game-agnostic
     if (playerMove == "u"):
-        if (len(positionHistory) == 1): 
+        if (len(positionHistory) == 1 or (len(positionHistory)==2 and players[1] == 'COMP')): 
             print("Can't Undo!!")
             return False
-        oldPosition = len(positionHistory) - 1
-        position = positionHistory[oldPosition]
-        positionHistory.remove(position)
-        playGame(position, option, True)
+        positionHistory.pop()
+        positionHistory.pop()
+        return False
     else:
-        playerMove = int(playerMove)
+        playerMove = translateMove(int(playerMove))
         if (playerMove not in possibleMoves):
             print("Invalid Move")
-            playGame(position, option, False)
+            return False
         else:
+            position = game.DoMove(position, playerMove)
             positionHistory.append(position)
-            position = game.DoMove(position, translateMove(playerMove))
-            if(option == 3):
-                position = compDoMove(position)
-                if not position: #Game is over on computer's turn
-                    return
-            playGame(position, option, False)
+            return False
 
+# TODO: Generalize to MxN games
+# TODO: Not game-agnostic, Move to game module
 def displayGame(board, gameOver=False):
     print("Legend: ", end = '\n')
-    print("(1 2 3)", end ='\n') # TODO: Generalize to MxN games
-    print("(4 5 6)", end ='\n') # TODO: This function ideally should live in game module
+    print("(1 2 3)", end ='\n') 
+    print("(4 5 6)", end ='\n') 
     print("(7 8 9)", end ='\n')
 
     if game.setTurn(board) == -1 and not game.isOnlyX: 
@@ -136,15 +137,8 @@ def compDoMove(position):
     position = game.DoMove(position, bestMove) 
     return position
 
-def generatePlayerMoves(position):
-    board = game.decodePosition(position).flatten()
-    moves = []
-    for i in range(len(board)):
-        if(board[i] == 0):
-            moves.append(i + 1)
-    return moves    
-
-def translateMove(n):
+# TODO: Not game-agnostic
+def translateMove(n): 
     i = (n-1) // game.m
     j = (n-1) % game.n
     return (i, j, 1) 
