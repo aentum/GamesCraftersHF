@@ -2,7 +2,7 @@ import importlib
 import json
 
 def main():
-    global game, solved, positionHistory, value_dict, option, players
+    global game, solved, value_dict 
     print(f'Input the game module to play:')
     module_name = input()
     game_module = importlib.import_module(module_name)
@@ -14,7 +14,10 @@ def main():
         solver = importlib.import_module('solver')
         value_dict = solver.main(game, module_name)
         solved = True
+    play()
 
+def play():
+    global option, players
     # Play Human vs Human or Human vs Comp
     option = -1
     if solved:
@@ -36,21 +39,24 @@ def main():
 
     positionHistory = [game.startingPos]
     while True:
-        isover = playGame(positionHistory)
+        isover = gameTurn(positionHistory)
         if isover:
             break
-    print('Game Over, Thanks for Playing!')
+    if ('Y' == input('Game Over, Play again? (Y/N)').capitalize()):
+        play()
+    else:
+        print('Thanks for Playing, Bye!')
 
 # On every turn:
 # Display the board
 # Take in input
 # Do the move / Undo a move
 # Check if win/lose/tie
-def playGame(positionHistory):
+def gameTurn(positionHistory):
     assert len(positionHistory) > 0
     position = positionHistory[-1]
     board = game.decodePosition(position) # TODO: Not game-agnostic
-    player = game.setTurn(board) # Player 1 = X , Player 2 = 'O'
+    player = 1 if game.setTurn(board) == 1 else 2
     if (game.PrimitiveValue(position) != 'NOT_PRIMITIVE'):
         displayGame(board, gameOver=True)
         print(f"Player {players[player-1]} {game.PrimitiveValue(position)}")
@@ -65,7 +71,7 @@ def playGame(positionHistory):
     possibleMoves = game.GenerateMoves(position)
     playerMove = (input("Player's move [(u)ndo/1-9]: ")) # TODO: For order and chaos, provide the option to place x or o # TODO: Not game-agnostic
     if (playerMove == "u"):
-        if (len(positionHistory) == 1 or (len(positionHistory)==2 and players[1] == 'COMP')): 
+        if (len(positionHistory) == 1 or (len(positionHistory)==2 and players[0] == 'COMP')): 
             print("Can't Undo!!")
             return False
         positionHistory.pop()
